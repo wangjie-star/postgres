@@ -1,0 +1,33 @@
+name: Sync Upstream (All Branches & Tags)
+
+on:
+  workflow_dispatch:              # 手动触发
+  schedule:
+    - cron: '0 0 * * *'           # 每天 UTC 0 点自动运行
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout your fork
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0          # 获取全部历史
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Add upstream and fetch everything
+        run: |
+          git remote add upstream https://github.com/postgres/postgres.git
+          git fetch upstream --prune
+
+      - name: Force push all upstream branches to your fork
+        run: |
+          # 将上游的所有分支（通过远程跟踪引用）强制推送到 origin，不留本地分支的干扰
+          git push origin '+refs/remotes/upstream/*:refs/heads/*' --force
+
+      - name: Force push all tags
+        run: |
+          git push origin --force --tags
